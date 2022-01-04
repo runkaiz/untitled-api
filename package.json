@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "name": "api",
+  "version": "1.0.0",
+  "description": "A template for kick starting a Cloudflare Workers project",
+  "main": "./index.js",
+  "author": "Runkai Zhang <me@runkaizhang.xyz>",
+  "license": "MIT"
+}

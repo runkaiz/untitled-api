@@ -1,0 +1,7 @@
+name = "api"
+type = "javascript"
+workers_dev = true
+compatibility_date = "2022-01-03"
+kv_namespaces = [ 
+  { binding = "BLOG", id = "1a09419a7c3e412882f6b3337cad2719" }
+]
