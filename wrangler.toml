@@ -1,5 +1,5 @@
 name = "api"
-type = "javascript"
+type = "webpack"
 workers_dev = true
 compatibility_date = "2022-01-03"
 kv_namespaces = [ 
