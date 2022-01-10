@@ -5,7 +5,9 @@ compatibility_date = "2022-01-03"
 account_id = "999082d41b8b1f538b37a8f395918c33"
 kv_namespaces = [ 
   { binding = "BLOG", id = "1a09419a7c3e412882f6b3337cad2719", preview_id = "ccd8b6c4d8ba4f8bb53b035c9ca384f0" },
-  { binding = "UPDATES", id = "d2049919c65d48ed8616ea5c2afbc0e2", preview_id = "18b71445d21b4a56997b7ff20fd31ce2" }
+  { binding = "UPDATES", id = "d2049919c65d48ed8616ea5c2afbc0e2", preview_id = "18b71445d21b4a56997b7ff20fd31ce2" },
+  { binding = "USERS", id = "2a5627cebc6242b39b818d4b1df43abe", preview_id = "72acdb919fbb4386a7134b54ec613f84" },
+  { binding = "TOKENS", id = "a898334cdd3048e5a653a055261d6815", preview_id = "72f3ff62fd62453d98d824c72d82b668" }
 ]
 
 # Run `wrangler dev` to test locally.

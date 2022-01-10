@@ -1,4 +1,5 @@
 import { Router } from 'itty-router'
+import auth from './auth'
 
 // Create a new router
 const router = Router()
@@ -20,7 +21,7 @@ router.get('/', async request => {
   }
 })
 
-router.post('/', async request => {
+router.post('/', auth, async request => {
   // TODO: Validate the request
   return addPost(await request.text())
 })
@@ -85,7 +86,7 @@ router.get('/updates', async request => {
   return listUpdates(limit, cursor)
 })
 
-router.post('/updates', async request => {
+router.post('/updates', auth, async request => {
   // TODO: Validate the request
   const update = await request.json()
   return addUpdate(update)
@@ -127,6 +128,99 @@ async function addUpdate(update) {
   })
 }
 
+/**
+ * The /login route.
+ * For GET requests, the url parameters are:
+ * - username: the username of the user to login as (required)
+ * - password: the password of the user to login as (required)
+ *
+ * Returns a token and set for Authorization header if the login is successful.
+ */
+router.get('/login', async request => {
+  const username = new URL(request.url).searchParams.get('username')
+  const password = new URL(request.url).searchParams.get('password')
+  return login(username, password)
+})
+
+async function login(username, password) {
+  const myHeaders = new Headers()
+  myHeaders.set('Access-Control-Allow-Origin', '*')
+  myHeaders.set('Access-Control-Allow-Methods', 'GET')
+  myHeaders.set('Access-Control-Max-Age', '86400')
+  myHeaders.set('content-type', 'application/json')
+
+  if (!username || !password) {
+    return new Response('Username and password are required', {
+      status: 400,
+      headers: myHeaders,
+    })
+  }
+
+  // Try to find the user in KV
+  const user = await USERS.get(username, { type: 'json' })
+
+  if (!user) {
+    return new Response(re(true, 'User not found.'), {
+      status: 404,
+      headers: myHeaders,
+    })
+  }
+
+  // Check the password
+  // Hashing the incoming password with the salt using WebCrypto
+  const hash = await hashPassword(password, user.salt)
+  // If the hash doesn't match, the password is wrong
+  if (hash !== user.password) {
+    return new Response(re(true, 'Wrong password'), {
+      status: 401,
+      headers: myHeaders,
+    })
+  }
+
+  // Generate a 30-day token and store it in KV.
+  const token = await generateToken()
+  const expireTtl = 30 * 24 * 60 * 60
+  console.log(`token: ${token} expireTtl: ${expireTtl}`)
+  await TOKENS.put(token, username, { expirationTtl: expireTtl })
+
+  const result = {
+    token: token,
+    expireTtl: expireTtl,
+  }
+
+  return new Response(re(false, 'Logged in.', result), {
+    status: 200,
+    headers: myHeaders,
+  })
+}
+
+/**
+ * The /logout route.
+ * Reads the Authorization header and deletes the token from KV.
+ */
+router.get('/logout', async request => {
+  const myHeaders = new Headers()
+  myHeaders.set('Access-Control-Allow-Origin', '*')
+  myHeaders.set('Access-Control-Allow-Methods', 'GET')
+  myHeaders.set('Access-Control-Max-Age', '86400')
+  myHeaders.set('content-type', 'application/json')
+
+  if (!request.headers.get('Authorization')) {
+    return new Response(re(true, 'No authorization header.'), {
+      status: 400,
+      headers: myHeaders,
+    })
+  }
+
+  const token = request.headers.get('Authorization').replace('Token ', '')
+  await TOKENS.delete(token)
+
+  return new Response(re(false, 'Logged out.'), {
+    status: 200,
+    headers: myHeaders,
+  })
+})
+
 /*
 Lead all unknown routes to 404.
 */
@@ -139,3 +233,36 @@ are passed to the router where your routes are called and the response is sent.
 addEventListener('fetch', e => {
   e.respondWith(router.handle(e.request))
 })
+
+// Use this function to generate response bodies to standardize the response format.
+function re(error, message, data) {
+  if (!error || !message) {
+    throw new Error('re() requires error and message')
+  }
+
+  data = data || {}
+
+  return JSON.stringify({
+    error: error,
+    message: message,
+    data: data,
+  })
+}
+
+async function hashPassword(password, salt) {
+  const msgUint8 = new TextEncoder().encode(`${password}${salt}`) // encode as (utf-8) Uint8Array
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8) // hash the password
+  const hashArray = Array.from(new Uint8Array(hashBuffer)) // convert buffer to byte array
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('') // convert bytes to hex string
+  return hashHex
+}
+
+async function generateToken() {
+  const token = await crypto.subtle.generateKey(
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt', 'decrypt'],
+  )
+  const exportedToken = await crypto.subtle.exportKey('raw', token)
+  return Buffer.from(exportedToken).toString('hex')
+}
