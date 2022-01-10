@@ -2,6 +2,10 @@ name = "api"
 type = "webpack"
 workers_dev = true
 compatibility_date = "2022-01-03"
+account_id = "999082d41b8b1f538b37a8f395918c33"
 kv_namespaces = [ 
-  { binding = "BLOG", id = "1a09419a7c3e412882f6b3337cad2719" }
+  { binding = "BLOG", id = "1a09419a7c3e412882f6b3337cad2719", preview_id = "ccd8b6c4d8ba4f8bb53b035c9ca384f0" },
+  { binding = "UPDATES", id = "d2049919c65d48ed8616ea5c2afbc0e2", preview_id = "18b71445d21b4a56997b7ff20fd31ce2" }
 ]
+
+# Run `wrangler dev` to test locally.
