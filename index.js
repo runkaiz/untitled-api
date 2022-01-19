@@ -21,7 +21,7 @@ router.get('/', async request => {
   const imagesSize = url.searchParams.get('imagesSize')
 
   if (imagesIndex && imagesSize) {
-    return listImages(imagesIndex, imagesSize++)
+    return listImages(imagesIndex, imagesSize)
   } else if (imagesIndex) {
     return listImages(imagesIndex, 50)
   }
@@ -46,22 +46,17 @@ async function listImages(index, length) {
   myHeaders.set('Access-Control-Allow-Origin', '*')
   myHeaders.set('Access-Control-Allow-Methods', 'GET')
   myHeaders.set('Access-Control-Max-Age', '86400')
-  myHeaders.set('content-type', 'application/json')
+  myHeaders.set('Content-Type', 'application/json')
 
-  const result = await fetch(`https://api.cloudflare.com/client/v4/accounts/999082d41b8b1f538b37a8f395918c33/images/v1?page=${index}&per_page=${length}`, {
+  const request = await fetch(`https://api.cloudflare.com/client/v4/accounts/999082d41b8b1f538b37a8f395918c33/images/v1?page=${Number(index) + 1}&per_page=${length}`, {
         method: "GET",
-        mode: 'cors',
         headers: {
-            'Content-Type':'application/json',
             'Authorization': 'Bearer wC2nozCkOTw3dJ9arYQvdp9ibcYoRuZIOVB38Fis'
-        }})
-  .then((response) => {
-     console.log(response);
-  })
+        }}).then(response => {return response.json()})
 
-  return new Response(JSON.stringify(result), {
+  return new Response(JSON.stringify(request), {
     status: 200,
-    headers: myHeaders,
+    headers: myHeaders
   })
 }
 
@@ -72,6 +67,9 @@ async function listPosts() {
   myHeaders.set('Access-Control-Max-Age', '86400')
   myHeaders.set('content-type', 'application/json')
   const result = await BLOG.list()
+  .then(json => {
+    return json
+  })
 
   return new Response(JSON.stringify(result.keys), {
     status: 200,
