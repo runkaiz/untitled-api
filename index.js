@@ -13,7 +13,19 @@ Parameters:
         returns a list of articles if no id is specified
 */
 router.get('/', async request => {
-  const id = new URL(request.url).searchParams.get('id')
+
+  const url = new URL(request.url)
+
+  const id = url.searchParams.get('id')
+  const imagesIndex = url.searchParams.get('imagesIndex')
+  const imagesSize = url.searchParams.get('imagesSize')
+
+  if (imagesIndex && imagesSize) {
+    return listImages(imagesIndex, imagesSize++)
+  } else if (imagesIndex) {
+    return listImages(imagesIndex, 50)
+  }
+
   if (id) {
     return readPost(id)
   } else {
@@ -22,9 +34,36 @@ router.get('/', async request => {
 })
 
 router.post('/', auth, async request => {
-  // TODO: Validate the request
+  // TODO: Validate the requesthttps://api.untitled.workers.dev
   return addPost(await request.text())
 })
+
+/*
+Getting a list of images, pagination builtin.
+*/
+async function listImages(index, length) {
+  const myHeaders = new Headers()
+  myHeaders.set('Access-Control-Allow-Origin', '*')
+  myHeaders.set('Access-Control-Allow-Methods', 'GET')
+  myHeaders.set('Access-Control-Max-Age', '86400')
+  myHeaders.set('content-type', 'application/json')
+
+  const result = await fetch(`https://api.cloudflare.com/client/v4/accounts/999082d41b8b1f538b37a8f395918c33/images/v1?page=${index}&per_page=${length}`, {
+        method: "GET",
+        mode: 'cors',
+        headers: {
+            'Content-Type':'application/json',
+            'Authorization': 'Bearer wC2nozCkOTw3dJ9arYQvdp9ibcYoRuZIOVB38Fis'
+        }})
+  .then((response) => {
+     console.log(response);
+  })
+
+  return new Response(JSON.stringify(result), {
+    status: 200,
+    headers: myHeaders,
+  })
+}
 
 async function listPosts() {
   const myHeaders = new Headers()
